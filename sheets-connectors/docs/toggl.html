@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Toggl Track to Google Sheets: free script</title><meta name="description" content="Toggl Track to Google Sheets: free script"><style>body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:0 auto;padding:24px 16px;line-height:1.6;color:#1d1d1f;background:#fff}
+h1{font-size:28px;margin:8px 0 4px}h2{font-size:20px;margin-top:28px}code,pre{background:#f3f4f6;border-radius:6px}code{padding:1px 5px}
+pre{padding:12px;overflow-x:auto}a{color:#0b57d0}.note{background:#f6f8fa;border-left:4px solid #0b57d0;padding:10px 14px;margin:16px 0}
+.small{font-size:13px;color:#555}nav a{margin-right:14px}ol li{margin-bottom:6px}</style></head><body>
+<nav class="small"><a href="index.html">Home</a><a href="toggl.html">Toggl Track to Sheets</a><a href="calendly.html">Calendly to Sheets</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></nav>
+
+<h1>Toggl Track to Google Sheets (free script)</h1>
+<p>Pulls your Toggl Track time entries into a sheet called <b>Toggl entries</b>, with date, start, stop, hours, duration, description, project, client, tags, billable status, user and entry ID. Re-syncing updates edited entries instead of duplicating them, so you can build invoices and client timesheets with your own formulas and pivots.</p>
+<div class="note">A one-click Pro version is planned ($9/month, with a free tier for small accounts). <a href="https://tally.so/r/jeZ5M9">Join the waitlist</a>.</div>
+<h2>Set it up (about 3 minutes)</h2>
+<ol>
+<li>Open the Google Sheet you want to use, then choose <b>Extensions &gt; Apps Script</b>.</li>
+<li>Delete the sample code, paste the script from <a href="https://github.com/woa2013-cpu/sheets-connectors">the GitHub repository</a> (<code>toggl/Code.gs</code>), and click <b>Save</b>.</li>
+<li>Reload the spreadsheet. A <b>Toggl Sync</b> menu appears.</li>
+<li>Choose <b>Toggl Sync &gt; Connect Toggl</b> and paste your API token. Find it in Toggl Track under <b>Profile settings &gt; API Token</b>.</li>
+<li>Choose <b>Toggl Sync &gt; Sync now</b>. The first time, Google asks you to authorize the script. It only asks to edit the current spreadsheet, connect to Toggl Track's API and run on a schedule.</li>
+</ol>
+<h2>Good to know</h2><ul><li>The default sync covers the last 30 days. Use <b>Sync a custom date range</b> for up to 365 days at a time.</li>
+<li><b>Turn on daily sync</b> refreshes the last 7 days every morning.</li>
+<li>Toggl's free plan allows about 30 API requests per hour. A typical 30-day sync uses about 5 to 8 (more for very large ranges), so it stays well inside that limit.</li>
+<li>Works with Toggl Track. Toggl 2.0 uses a different API and isn't supported yet.</li></ul>
+<h2>Privacy</h2>
+<p>Your token is saved in your own Apps Script user properties. Use <b>Disconnect</b> in the menu to delete it. See the <a href="privacy.html">privacy policy</a>.</p>
+<hr><p class="small">Built by Wade'a Ahmad. Not affiliated with, endorsed by, or sponsored by Toggl, Calendly or Google. Toggl, Calendly and Google Sheets are trademarks of their owners.</p>
+</body></html>

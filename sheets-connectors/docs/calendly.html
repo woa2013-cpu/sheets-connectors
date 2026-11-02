@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calendly to Google Sheets: free script (works on the free plan)</title><meta name="description" content="Calendly to Google Sheets: free script (works on the free plan)"><style>body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:0 auto;padding:24px 16px;line-height:1.6;color:#1d1d1f;background:#fff}
+h1{font-size:28px;margin:8px 0 4px}h2{font-size:20px;margin-top:28px}code,pre{background:#f3f4f6;border-radius:6px}code{padding:1px 5px}
+pre{padding:12px;overflow-x:auto}a{color:#0b57d0}.note{background:#f6f8fa;border-left:4px solid #0b57d0;padding:10px 14px;margin:16px 0}
+.small{font-size:13px;color:#555}nav a{margin-right:14px}ol li{margin-bottom:6px}</style></head><body>
+<nav class="small"><a href="index.html">Home</a><a href="toggl.html">Toggl Track to Sheets</a><a href="calendly.html">Calendly to Sheets</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></nav>
+
+<h1>Calendly to Google Sheets (free script)</h1>
+<p>Pulls your Calendly bookings into a sheet called <b>Calendly bookings</b>, one row per invitee: event time, event name, status, name, email, time zone, booked-at time, cancellations (who and why), reschedules, no-shows, location, UTM source/medium/campaign, and every booking question as its own column. It uses Calendly's API, which is available on every plan, including Free. You don't need CSV export or Zapier.</p>
+<div class="note">A one-click Pro version is planned ($9/month, with a free tier for small accounts). <a href="https://tally.so/r/7Xq1W9">Join the waitlist</a>.</div>
+<h2>Set it up (about 3 minutes)</h2>
+<ol>
+<li>Open the Google Sheet you want to use, then choose <b>Extensions &gt; Apps Script</b>.</li>
+<li>Delete the sample code, paste the script from <a href="https://github.com/woa2013-cpu/sheets-connectors">the GitHub repository</a> (<code>calendly/Code.gs</code>), and click <b>Save</b>.</li>
+<li>Reload the spreadsheet. A <b>Calendly Sync</b> menu appears.</li>
+<li>Choose <b>Calendly Sync &gt; Connect Calendly</b> and paste a personal access token. Create one in Calendly under <b>Integrations &amp; apps &gt; API and webhooks</b>.</li>
+<li>Choose <b>Calendly Sync &gt; Sync now</b>. The first time, Google asks you to authorize the script. It only asks to edit the current spreadsheet, connect to Calendly's API and run on a schedule.</li>
+</ol>
+<h2>Good to know</h2><ul><li>The default sync covers the last 30 days and the next 60 days. Use <b>Sync a custom date range</b> for anything else.</li>
+<li><b>Turn on hourly sync</b> keeps the sheet current automatically.</li>
+<li>On the free plan Calendly allows 50 API requests per minute. The script slows down automatically to stay within it. A very large first sync (hundreds of events) may need to be split into smaller date ranges.</li>
+<li>Times are shown in your spreadsheet's time zone (File &gt; Settings).</li></ul>
+<h2>Privacy</h2>
+<p>Your token is saved in your own Apps Script user properties. Use <b>Disconnect</b> in the menu to delete it. See the <a href="privacy.html">privacy policy</a>.</p>
+<hr><p class="small">Built by Wade'a Ahmad. Not affiliated with, endorsed by, or sponsored by Toggl, Calendly or Google. Toggl, Calendly and Google Sheets are trademarks of their owners.</p>
+</body></html>
