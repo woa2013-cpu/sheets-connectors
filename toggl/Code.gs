@@ -1,8 +1,9 @@
 /**
- * Toggl Track -> Google Sheets (free script)
+ * Toggl -> Google Sheets (free script). Works with Toggl Track AND Toggl 2.0.
  *
- * Pulls your Toggl Track time entries (descriptions, projects, clients, tags)
+ * Pulls your Toggl time entries (descriptions, projects, clients, tags)
  * into a sheet called "Toggl entries" and keeps it up to date.
+ * The token type is detected automatically: Toggl 2.0 keys start with "toggl_sk_".
  *
  * Setup: Extensions > Apps Script, paste this file, save, reload the sheet,
  * then use the "Toggl Sync" menu. Your API token is stored only in your own
@@ -19,6 +20,9 @@ var IS_ADDON = false; // true in the Marketplace build
 var TOGGL = {
   API: 'https://api.track.toggl.com/api/v9',
   REPORTS: 'https://api.track.toggl.com/reports/api/v3',
+  FOCUS: 'https://focus.toggl.com/api', // Toggl 2.0
+  ORG_KEY: 'TOGGL_ORG_ID',
+  MODE_KEY: 'TOGGL_MODE',
   SHEET: 'Toggl entries',
   HEADERS: ['Date', 'Start', 'Stop', 'Hours', 'Duration', 'Description',
             'Project', 'Client', 'Tags', 'Billable', 'User', 'Entry ID'],
@@ -52,20 +56,30 @@ function onInstall(e) { onOpen(e); }
 
 function togglSetToken() {
   var ui = SpreadsheetApp.getUi();
-  var res = ui.prompt('Connect Toggl Track',
-    'Paste your Toggl Track API token.\nFind it at track.toggl.com > Profile settings > API Token.',
+  var res = ui.prompt('Connect Toggl',
+    'Paste your Toggl API token.\n' +
+    'Toggl 2.0: toggl.com > Profile settings > API Token > Generate (starts with toggl_sk_).\n' +
+    'Toggl Track: track.toggl.com > Profile settings > API Token.',
     ui.ButtonSet.OK_CANCEL);
   if (res.getSelectedButton() !== ui.Button.OK) return;
   var token = String(res.getResponseText() || '').trim();
   if (!token) { ui.alert('No token entered.'); return; }
-  var me = togglRequest_('get', TOGGL.API + '/me', null, token);
-  var props = PropertiesService.getUserProperties();
-  props.setProperty(TOGGL.TOKEN_KEY, token);
-  if (me.body && me.body.default_workspace_id) {
-    PropertiesService.getDocumentProperties().setProperty(TOGGL.WS_KEY, String(me.body.default_workspace_id));
+  var doc = PropertiesService.getDocumentProperties();
+  var who;
+  if (togglIs2_(token)) {
+    var ws = togglFocusWorkspace_(token);
+    doc.setProperty(TOGGL.MODE_KEY, '2.0');
+    doc.setProperty(TOGGL.WS_KEY, String(ws.workspaceId));
+    who = 'Toggl 2.0 (workspace ' + ws.workspaceId + ')';
+  } else {
+    var me = togglRequest_('get', TOGGL.API + '/me', null, token);
+    doc.setProperty(TOGGL.MODE_KEY, 'track');
+    doc.deleteProperty(TOGGL.ORG_KEY);
+    if (me.body && me.body.default_workspace_id) doc.setProperty(TOGGL.WS_KEY, String(me.body.default_workspace_id));
+    who = 'Toggl Track as ' + (me.body.fullname || me.body.email || 'your account');
   }
-  ui.alert('Connected as ' + (me.body.fullname || me.body.email || 'your Toggl account') +
-    '.\nNow choose Toggl Sync > Sync now.');
+  PropertiesService.getUserProperties().setProperty(TOGGL.TOKEN_KEY, token);
+  ui.alert('Connected to ' + who + '.\nNow choose Toggl Sync > Sync now.');
 }
 
 function togglSyncNow() {
@@ -130,6 +144,7 @@ function togglSync_(start, end) {
   var token = PropertiesService.getUserProperties().getProperty(TOGGL.TOKEN_KEY);
   if (!token) return { ok: false, message: 'Connect Toggl first (Toggl Sync > Connect).' };
   if ((end - start) / 86400000 > TOGGL.MAX_DAYS) return { ok: false, message: 'Range is longer than 365 days.' };
+  if (togglIs2_(token)) return togglSyncFocus_(start, end, token);
 
   var docProps = PropertiesService.getDocumentProperties();
   var wid = docProps.getProperty(TOGGL.WS_KEY);
@@ -217,6 +232,84 @@ function togglTry_(fn) {
   }
 }
 
+/* ---------------- Toggl 2.0 ---------------- */
+
+function togglIs2_(token) { return /^toggl_sk_/.test(String(token || '')); }
+
+function togglFocusWorkspace_(token) {
+  // Toggl 2.0: the current workspace comes from user settings (API keys can't call the session-only context endpoint).
+  var settings = togglRequest_('get', TOGGL.FOCUS + '/users/me/settings', null, token).body || {};
+  var wid = settings.current_workspace_id;
+  if (!wid) throw new Error('Toggl 2.0 did not report a current workspace. Open Toggl 2.0 once in the browser, then connect again.');
+  return { workspaceId: wid };
+}
+
+var TOGGL2_ATTRS = ['time_entry_id', 'start_date', 'start_time', 'stop_time', 'duration', 'description',
+                    'task_name', 'project_name', 'client_name', 'tag_names', 'effective_billable', 'user_name'];
+
+function togglSyncFocus_(start, end, token) {
+  var doc = PropertiesService.getDocumentProperties();
+  var wid = doc.getProperty(TOGGL.WS_KEY);
+  if (!wid || doc.getProperty(TOGGL.MODE_KEY) !== '2.0') {
+    wid = String(togglFocusWorkspace_(token).workspaceId);
+    doc.setProperty(TOGGL.WS_KEY, wid); doc.setProperty(TOGGL.MODE_KEY, '2.0');
+  }
+  var tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
+  var url = TOGGL.FOCUS + '/reports/workspaces/' + wid + '/query?response_format=json_row';
+  var rows = [], total = null, perPage = 200;
+  // Reports query: one row per time entry the caller may see, in the caller's own time zone.
+  for (var page = 1; page <= 100; page++) {
+    var body = {
+      attributes: TOGGL2_ATTRS.map(function (p) { return { property: p }; }),
+      period: { from: Utilities.formatDate(start, tz, 'yyyy-MM-dd'), to: Utilities.formatDate(end, tz, 'yyyy-MM-dd') },
+      pagination: { page: page, per_page: perPage },
+      view_in_my_timezone: true
+    };
+    var res = togglRequest_('post', url, body, token).body || {};
+    var data = res.data_json_row || [];
+    if (total === null && typeof res.total_count === 'number') total = res.total_count;
+    if (page === 1 && data.length && togglPick_(data[0], 'time_entry_id') === undefined) {
+      throw new Error('Unexpected Toggl 2.0 report format. Columns returned: ' + Object.keys(data[0]).join(', '));
+    }
+    data.forEach(function (r) { rows.push(togglFocusRow_(r)); });
+    if (!data.length || data.length < perPage || (total !== null && rows.length >= total)) break;
+  }
+  var written = togglUpsert_(rows);
+  return { ok: true, message: rows.length + ' Toggl 2.0 entries synced (' + written.added + ' new, ' +
+           written.updated + ' updated).' };
+}
+
+function togglPick_(r, key) {
+  if (r[key] !== undefined) return r[key];
+  var lower = key.toLowerCase();
+  for (var k in r) if (k.toLowerCase() === lower) return r[k];
+  return undefined;
+}
+
+function togglFocusRow_(r) {
+  var get = function (k) { var v = togglPick_(r, k); return v === null || v === undefined ? '' : v; };
+  var seconds = Number(get('duration')) || 0;
+  var hm = function (t) { var m = /(\d{1,2}):(\d{2})/.exec(String(t)); return m ? (m[1].length === 1 ? '0' : '') + m[1] + ':' + m[2] : String(t); };
+  var date = String(get('start_date')).slice(0, 10);
+  var tags = get('tag_names');
+  if (Object.prototype.toString.call(tags) === '[object Array]') tags = tags.filter(Boolean).join(', ');
+  var billable = get('effective_billable');
+  return [
+    date,
+    hm(get('start_time')),
+    get('stop_time') === '' ? '(running)' : hm(get('stop_time')),
+    Math.round(seconds / 36) / 100,
+    togglHms_(seconds),
+    get('description') || get('task_name'),
+    get('project_name'),
+    get('client_name'),
+    tags,
+    billable === true || billable === 'true' ? 'Yes' : 'No',
+    get('user_name'),
+    String(get('time_entry_id'))
+  ];
+}
+
 /* ---------------- Sheet writing ---------------- */
 
 function togglUpsert_(rows) {
@@ -255,7 +348,7 @@ function togglRequest_(method, url, payload, token) {
   var opts = {
     method: method,
     muteHttpExceptions: true,
-    headers: { Authorization: 'Basic ' + Utilities.base64Encode(token + ':api_token') },
+    headers: { Authorization: togglIs2_(token) ? 'Bearer ' + token : 'Basic ' + Utilities.base64Encode(token + ':api_token') },
     contentType: 'application/json'
   };
   if (payload) opts.payload = JSON.stringify(payload);
@@ -264,7 +357,20 @@ function togglRequest_(method, url, payload, token) {
     var code = r.getResponseCode();
     var headers = r.getAllHeaders() || {};
     if (code === 429) { Utilities.sleep(5000 * (attempt + 1)); continue; }
-    if (code === 401 || code === 403) throw new Error('Toggl rejected the API token (HTTP ' + code + '). Reconnect with a fresh token.');
+    if (code === 401 || code === 403) {
+      var path = url.replace(/^https:\/\/[^\/]+/, '').split('?')[0];
+      var detail = r.getContentText().slice(0, 150);
+      if (togglIs2_(token) && code === 401) {
+        throw new Error('Toggl 2.0 rejected the API key (HTTP 401 on ' + path + '). It may have expired or been replaced. ' +
+          'Generate a new one at toggl.com > Profile settings > API Token, then connect again. Details: ' + detail);
+      }
+      if (/\/me$/.test(url)) {
+        throw new Error('Toggl rejected the API token (HTTP ' + code + ' on ' + path + '). Copy the token again from ' +
+          'track.toggl.com > Profile settings > API Token (Toggl 2.0 keys start with toggl_sk_). Details: ' + detail);
+      }
+      throw new Error('Toggl refused access (HTTP ' + code + ' on ' + path + '). The token works but this workspace or ' +
+        'report isn\'t accessible to it. Details: ' + detail);
+    }
     if (code === 402) {
       var wait = headers['X-Toggl-Quota-Resets-In'] || headers['x-toggl-quota-resets-in'] || '?';
       throw new Error('Toggl API hourly limit reached. Try again in about ' + wait + ' seconds.');

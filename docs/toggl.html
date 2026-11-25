@@ -13,13 +13,13 @@ pre{padding:12px;overflow-x:auto}a{color:#0b57d0}.note{background:#f6f8fa;border
 <li>Open the Google Sheet you want to use, then choose <b>Extensions &gt; Apps Script</b>.</li>
 <li>Delete the sample code, paste the script from <a href="https://github.com/woa2013-cpu/sheets-connectors">the GitHub repository</a> (<code>toggl/Code.gs</code>), and click <b>Save</b>.</li>
 <li>Reload the spreadsheet. A <b>Toggl Sync</b> menu appears.</li>
-<li>Choose <b>Toggl Sync &gt; Connect Toggl</b> and paste your API token. Find it in Toggl Track under <b>Profile settings &gt; API Token</b>.</li>
+<li>Choose <b>Toggl Sync &gt; Connect Toggl</b> and paste your API token. <b>Toggl 2.0:</b> toggl.com &gt; Profile settings &gt; API Token &gt; Generate (copy it right away; it's shown once and expires on the date you pick). <b>Toggl Track:</b> track.toggl.com &gt; Profile settings &gt; API Token.</li>
 <li>Choose <b>Toggl Sync &gt; Sync now</b>. The first time, Google asks you to authorize the script. It only asks to edit the current spreadsheet, connect to Toggl Track's API and run on a schedule.</li>
 </ol>
 <h2>Good to know</h2><ul><li>The default sync covers the last 30 days. Use <b>Sync a custom date range</b> for up to 365 days at a time.</li>
 <li><b>Turn on daily sync</b> refreshes the last 7 days every morning.</li>
-<li>Toggl's free plan allows about 30 API requests per hour. A typical 30-day sync uses about 5 to 8 (more for very large ranges), so it stays well inside that limit.</li>
-<li>Works with Toggl Track. Toggl 2.0 uses a different API and isn't supported yet.</li></ul>
+<li>Toggl's free plans (Track and 2.0) allow about 30 API requests per hour. A typical 30-day sync uses about 5 to 8 (more for very large ranges), so it stays well inside that limit.</li>
+<li>Works with both Toggl Track and Toggl 2.0. The script detects which one from your token.</li></ul>
 <h2>Privacy</h2>
 <p>Your token is saved in your own Apps Script user properties. Use <b>Disconnect</b> in the menu to delete it. See the <a href="privacy.html">privacy policy</a>.</p>
 <hr><p class="small">Built by Wade'a Ahmad. Not affiliated with, endorsed by, or sponsored by Toggl, Calendly or Google. Toggl, Calendly and Google Sheets are trademarks of their owners.</p>

@@ -47,13 +47,13 @@ Apps Script → Deploy → New deployment → type **Add-on** → Deploy. Note t
 ---
 
 ## Listing copy: Toggl
-**Name (≤50 characters):** `Time Entries Sync for Toggl Track`
+**Name (≤50 characters):** `Time Entries Sync for Toggl`
 
 **Short description (≤200 characters):**
-Sync your Toggl Track time entries into Google Sheets: descriptions, projects, clients, tags and hours. Updates in place, daily auto-sync, built for Toggl's free-plan API limit.
+Sync your Toggl Track or Toggl 2.0 time entries into Google Sheets: descriptions, projects, clients, tags, hours. Updates in place, daily auto-sync, fits the free-plan API limit.
 
 **Detailed description:**
-Get your Toggl Track time entries into a Google Sheet you control, and keep them current.
+Get your Toggl time entries (Toggl Track or Toggl 2.0) into a Google Sheet you control, and keep them current.
 
 What you get, in a tab called "Toggl entries":
 • Date, start, stop, hours (decimal) and duration (h:mm:ss)
@@ -64,9 +64,9 @@ What you get, in a tab called "Toggl entries":
 
 Built for invoices, client timesheets and monthly summaries with your own formulas and pivot tables.
 
-How it works: paste your Toggl Track API token (Profile settings → API Token). The add-on reads your time entries through Toggl's official API and writes them into the current spreadsheet. It only reads from Toggl and never changes anything there. There's no server in between, and your token stays in your own Google account.
+How it works: paste your Toggl API token. The add-on detects whether it's a Toggl Track or a Toggl 2.0 key. The add-on reads your time entries through Toggl's official API and writes them into the current spreadsheet. It only reads from Toggl and never changes anything there. There's no server in between, and your token stays in your own Google account.
 
-Light on API calls: a typical 30-day sync uses about 5–8 requests, so it stays inside the Toggl Track free plan's limit of about 30 requests per hour.
+Light on API calls: a typical 30-day sync uses about 5–8 requests, so it stays inside the free plans' limit of about 30 requests per hour.
 
 Free during beta. Not affiliated with, endorsed by, or sponsored by Toggl. Toggl is a trademark of its owner.
 
